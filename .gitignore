@@ -1,4 +1,21 @@
-﻿venv/
-.env
+﻿# Python
+venv/
 __pycache__/
 *.pyc
+*.pyo
+*.egg-info/
+.env
+
+# Data
+data/
+*.html
+*.pdf
+*.docx
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
