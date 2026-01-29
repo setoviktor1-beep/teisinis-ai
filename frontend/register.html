@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registracija - Teisinis AI</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        }
+        .auth-card {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-top: 4px solid #B49B6C;
+        }
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .auth-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #0F172A;
+            margin-bottom: 0.5rem;
+            display: block;
+            text-decoration: none;
+        }
+        .auth-logo span { color: #B49B6C; }
+        .auth-subtitle { color: #64748B; font-size: 0.9rem; }
+        .form-footer {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #64748B;
+        }
+        .form-footer a {
+            color: #3B82F6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .error-msg {
+            color: #EF4444;
+            background-color: #FEE2E2;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            display: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-card">
+        <div class="auth-header">
+            <a href="#" class="auth-logo">Teisinis <span>AI</span></a>
+            <p class="auth-subtitle">Sukurkite naują paskyrą</p>
+        </div>
+
+        <div id="errorMsg" class="error-msg"></div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="email">El. paštas</label>
+                <input type="text" id="email" required placeholder="vardas@pastas.lt">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Slaptažodis</label>
+                <input type="password" id="password" required placeholder="••••••••" minlength="4">
+            </div>
+
+            <button type="submit" class="btn-primary" id="regBtn">
+                <div class="loader hidden"></div>
+                <span>Registruotis</span>
+            </button>
+        </form>
+
+        <div class="form-footer">
+            <p>Jau turite paskyrą? <a href="login.html">Prisijungti</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('regBtn');
+            const errorMsg = document.getElementById('errorMsg');
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            btn.disabled = true;
+            btn.querySelector('.loader').classList.remove('hidden');
+            errorMsg.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/v1/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.detail || 'Registracijos klaida');
+                }
+
+                // Auto login (store token)
+                const data = await response.json();
+                localStorage.setItem('token', data.access_token);
+                window.location.href = 'index.html';
+
+            } catch (err) {
+                errorMsg.textContent = err.message;
+                errorMsg.style.display = 'block';
+                btn.disabled = false;
+                btn.querySelector('.loader').classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

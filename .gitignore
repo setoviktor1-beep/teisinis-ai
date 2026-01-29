@@ -8,7 +8,8 @@ __pycache__/
 
 # Data
 data/
-*.html
+*.db
+*.log
 *.pdf
 *.docx
 

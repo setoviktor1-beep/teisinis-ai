@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teisinis AI - Jūsų Teisinis Asistentas</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header>
+        <div class="container header-content">
+            <a href="#" class="logo">Teisinis <span>AI</span></a>
+            <nav>
+            <nav class="nav-container" style="display: flex; gap: 1rem; align-items: center;">
+        <button class="nav-btn active" data-tab="generator">Generavimas</button>
+        <button class="nav-btn" data-tab="history">Istorija</button>
+        <button id="logoutBtn" class="nav-btn" style="margin-left: auto; background-color: #ef4444; border-color: #ef4444; color: white;">Atsijungti</button>
+    </nav>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Išmanus Teisinis Asistentas</h1>
+            <p>Generuokite teisinius dokumentus ir sekite įstatymų pakeitimus su dirbtinio intelekto pagalba.</p>
+        </div>
+    </section>
+
+    <main class="container main-grid">
+        
+        <!-- Left Column: Generator -->
+        <section id="generatorSection" class="card">
+            <h2>📝 Dokumentų Generavimas</h2>
+            
+            <div class="form-group">
+                <label>Pasirinkite Dokumento Tipą:</label>
+                <select id="docTypeSelector" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #ccc; width: 100%;">
+                    <option value="complaint">Skundas dėl pažeidimo</option>
+                    <option value="contract">Darbo Sutartis</option>
+                </select>
+            </div>
+
+            <form id="complaintForm">
+                <h3>Skundo Duomenys</h3>
+                <div class="form-group">
+                    <label for="employeeName">Darbuotojas (Vardas Pavardė)</label>
+                    <input type="text" id="employeeName" placeholder="pvz. Jonas Jonaitis" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="employerName">Darbdavys (Įmonė)</label>
+                    <input type="text" id="employerName" placeholder="pvz. UAB Pavyzdys" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="workplace">Darbo Vieta</label>
+                    <input type="text" id="workplace" placeholder="pvz. Vilnius, Konstitucijos pr." required>
+                </div>
+
+                <div class="form-group">
+                    <label for="violationDate">Pažeidimo Data</label>
+                    <input type="date" id="violationDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="violationDescription">Situacijos Aprašymas</label>
+                    <textarea id="violationDescription" rows="5" placeholder="Aprašykite kas nutiko. Pvz. Darbdavys neleidžia dirbti nuotoliniu..." required></textarea>
+                </div>
+
+                <button type="submit" id="submitBtnComplaint" class="btn-primary">
+                    <div class="loader hidden"></div>
+                    <span>Generuoti Skundą</span>
+                </button>
+            </form>
+
+            <form id="contractForm" class="hidden">
+                <h3>Sutarties Duomenys</h3>
+                <div class="form-group">
+                    <label for="c_employeeName">Darbuotojas</label>
+                    <input type="text" id="c_employeeName" placeholder="Vardas Pavardė" required>
+                </div>
+                <div class="form-group">
+                    <label for="c_employerName">Darbdavys</label>
+                    <input type="text" id="c_employerName" placeholder="Įmonės pavadinimas" required>
+                </div>
+                <div class="form-group">
+                    <label for="c_position">Pareigos</label>
+                    <input type="text" id="c_position" placeholder="pvz. Vadybininkas" required>
+                </div>
+                <div class="form-group">
+                    <label for="c_salary">Atlyginimas (Bruto, EUR)</label>
+                    <input type="text" id="c_salary" placeholder="pvz. 1500" required>
+                </div>
+                <div class="form-group">
+                    <label for="c_workplace">Darbo Vieta</label>
+                    <input type="text" id="c_workplace" placeholder="pvz. Vilnius" required>
+                </div>
+                <div class="form-group">
+                    <label for="c_startDate">Pradžios Data</label>
+                    <input type="date" id="c_startDate" required>
+                </div>
+                <div class="form-group">
+                    <label for="c_conditions">Papildomos Sąlygos</label>
+                    <textarea id="c_conditions" rows="3" placeholder="Bandomasis laikotarpis ir t.t."></textarea>
+                </div>
+                <button type="submit" id="submitBtnContract" class="btn-primary">
+                    <div class="loader hidden"></div>
+                    <span>Generuoti Sutartį</span>
+                </button>
+            </form>
+
+            <div id="resultArea">
+                <h3>📄 Sugeneruotas Dokumentas:</h3>
+                <div id="resultContent" class="result-content"></div>
+                <p style="margin-top: 1rem; font-size: 0.8rem; color: #666;">
+                    * Tai yra AI sugeneruotas juodraštis. Prieš naudojant rekomenduojama peržiūrėti.
+                </p>
+            </div>
+        </section>
+
+        <!-- History Section (Hidden by default) -->
+        <section id="historySection" class="card hidden">
+            <h2>🗄️ Mano Dokumentai</h2>
+            <div id="historyList" class="history-list">
+                <p class="text-muted">Kraunama istorija...</p>
+            </div>
+        </section>
+
+        <!-- Right Column: Updates -->
+        <aside>
+            <div class="card">
+                <h2>📢 Įstatymų Naujienos</h2>
+                <ul id="updatesList" class="updates-list">
+                    <li class="update-item">Kraunama...</li>
+                </ul>
+            </div>
+            
+            <div class="card" style="margin-top: 2rem;">
+                <h2>💡 Apie Projektą</h2>
+                <p>Teisinis AI naudoja Gemini dirbtinį intelektą analizuoti Lietuvos Darbo kodeksą ir padeda piliečiams ginti savo teises.</p>
+            </div>
+        </aside>
+
+    </main>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+</body>
+</html>
