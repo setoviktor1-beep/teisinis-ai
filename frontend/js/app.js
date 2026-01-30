@@ -11,18 +11,71 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function checkAuth() {
+    // Check for token in URL (from Google Auth)
+    const urlParams = new URLSearchParams(window.location.search);
+    const tokenFromUrl = urlParams.get('token');
+
+    if (tokenFromUrl) {
+        localStorage.setItem('token', tokenFromUrl);
+        // Clear URL
+        window.history.replaceState({}, document.title, "/");
+        // Reload to update UI
+        window.location.reload();
+        return;
+    }
+
+    const token = localStorage.getItem('token');
+    updateUIForAuth(token);
+}
+
+function updateUIForAuth(isAuthenticated) {
+    const logoutBtn = document.getElementById('logoutBtn');
+    const historyTab = Array.from(document.querySelectorAll('.nav-btn')).find(t => t.dataset.tab === 'history');
+
+    if (logoutBtn) {
+        if (isAuthenticated) {
+            logoutBtn.textContent = 'Atsijungti';
+            logoutBtn.style.backgroundColor = '#ef4444';
+            logoutBtn.style.borderColor = '#ef4444';
+        } else {
+            logoutBtn.textContent = 'Prisijungti';
+            logoutBtn.style.backgroundColor = '#3B82F6';
+            logoutBtn.style.borderColor = '#3B82F6';
+        }
+    }
+
+    // Show/hide history tab based on auth
+    if (historyTab) {
+        historyTab.style.display = isAuthenticated ? 'block' : 'none';
+    }
+}
+
+function requireAuth() {
     const token = localStorage.getItem('token');
     if (!token) {
-        window.location.href = 'login.html';
+        if (confirm('Norint naudoti šią funkciją, reikia prisijungti. Ar norite prisijungti dabar?')) {
+            window.location.href = 'login.html';
+        }
+        return false;
     }
+    return true;
 }
 
 function setupLogout() {
     const btn = document.getElementById('logoutBtn');
-    btn.addEventListener('click', () => {
-        localStorage.removeItem('token');
-        window.location.href = 'login.html';
-    });
+    if (btn) {
+        btn.addEventListener('click', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                // Logout
+                localStorage.removeItem('token');
+                window.location.reload();
+            } else {
+                // Login
+                window.location.href = 'login.html';
+            }
+        });
+    }
 }
 
 
@@ -74,6 +127,12 @@ function setupTabs() {
 // --- History ---
 async function fetchHistory() {
     const list = document.getElementById('historyList');
+
+    if (!requireAuth()) {
+        list.innerHTML = '<p class="text-muted">Prisijunkite, norint peržiūrėti dokumentų istoriją.</p>';
+        return;
+    }
+
     list.innerHTML = '<p class="text-muted">Kraunama...</p>';
     
     try {
@@ -86,7 +145,8 @@ async function fetchHistory() {
         
         if (response.status === 401) {
             localStorage.removeItem('token');
-            window.location.href = 'login.html';
+            updateUIForAuth(false);
+            list.innerHTML = '<p class="text-muted">Sesija baigėsi. Prašome prisijungti dar kartą.</p>';
             return;
         }
         const docs = await response.json();
@@ -221,6 +281,8 @@ async function handleSubmission(form, btn, btnText, loader, endpoint, data) {
     const resultContent = document.getElementById('resultContent');
 
     btn.disabled = true;
+
+    btn.disabled = true;
     const originalText = btnText.textContent;
     btnText.textContent = 'Generuojama...';
     loader.classList.remove('hidden');
@@ -239,7 +301,8 @@ async function handleSubmission(form, btn, btnText, loader, endpoint, data) {
         
         if (response.status === 401) {
             localStorage.removeItem('token');
-            window.location.href = 'login.html';
+            updateUIForAuth(false);
+            alert('Sesija baigėsi. Prašome prisijungti dar kartą.');
             return;
         }
         

@@ -160,7 +160,7 @@ class ETARScraper:
         
         # Look for specific test article (52 - remote work)
         if '52' in matches:
-            print(f"\n✅ Article 52 detected (test article)")
+            print("\n✅ Article 52 detected (test article)")
         
         print()
     

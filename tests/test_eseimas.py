@@ -4,8 +4,6 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.agents.eseimas_agent import ESeimasAgent
-import json
-import datetime
 
 def test_eseimas_agent():
     print("="*70)

@@ -1,4 +1,4 @@
-```python
+
 import google.generativeai as genai
 import os
 from dotenv import load_dotenv
@@ -56,12 +56,13 @@ class DocumentGenerator:
         article_52 = self.scraper.fetch_article(52)
         if article_52:
             legal_articles.append(article_52)
-            print(f"✅ Fetched: {article_52['title']}\n")
+            legal_articles.append(article_52)
+            # print(f"✅ Fetched: {article_52['title']}\n") # Can cause UnicodeEncodeError on Windows
         else:
             print("❌ Failed to fetch Article 52. Proceeding without specific legal context.\n")
         
         # Combine legal context
-        legal_context = "\n\n".join([
+        legal_context = "\n\n".join([ # Combine legal context
             f"{art['title']}\n{art['content']}" 
             for art in legal_articles
         ])
@@ -120,7 +121,7 @@ class DocumentGenerator:
         print("="*70)
         print("📄 GENERATED DOCUMENT PREVIEW:")
         print("="*70)
-        print(generated_text[:800])
+        # print(generated_text[:800]) # Can cause UnicodeEncodeError
         print("\n... (see full document in JSON file)")
         print("="*70)
         

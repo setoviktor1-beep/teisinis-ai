@@ -3,7 +3,6 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.database import engine, Base
-from backend.models import Document
 import os
 
 print("Creating database tables...")
