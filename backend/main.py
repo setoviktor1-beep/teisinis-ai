@@ -453,7 +453,7 @@ async def get_article(article_id: int):
 @app.post("/api/v1/legal/upload-document")
 async def upload_document(
     file: UploadFile = File(...),
-    analysis_type: str = Form("general"),
+    analysis_type: str = Form(...),
     current_user: User = Depends(auth.get_current_user)
 ):
     """

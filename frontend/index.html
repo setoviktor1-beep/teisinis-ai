@@ -44,6 +44,7 @@
             left: 0;
             right: 0;
             background: rgba(255, 255, 255, 0.95);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--border);
             z-index: 1000;
@@ -191,6 +192,7 @@
 
         .hero-feature {
             background: rgba(255, 255, 255, 0.1);
+            -webkit-backdrop-filter: blur(10px);
             backdrop-filter: blur(10px);
             padding: 1.5rem;
             border-radius: 1rem;
@@ -541,6 +543,26 @@
         .fade-in-up {
             animation: fadeInUp 0.6s ease-out;
         }
+
+        /* Custom button styles */
+        .btn-hero-primary {
+            background: white !important;
+            color: var(--primary) !important;
+        }
+
+        .btn-hero-secondary {
+            border-color: white !important;
+            color: white !important;
+        }
+
+        .btn-full-width {
+            width: 100%;
+        }
+
+        .footer-description {
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -569,8 +591,8 @@
             <h1 class="fade-in-up">Teisinis AI - Jūsų Asmeninis Teisinis Asistentas</h1>
             <p class="fade-in-up">Greita, tiksli ir prieinama teisinė pagalba su dirbtinio intelekto galia. Pritaikyta Lietuvos įstatymams.</p>
             <div class="hero-buttons fade-in-up">
-                <a href="/dashboard.html" class="btn btn-primary" style="background: white; color: var(--primary);">Pradėti Nemokamai</a>
-                <a href="#paslaugos" class="btn btn-secondary" style="border-color: white; color: white;">Sužinoti Daugiau</a>
+                <a href="/dashboard.html" class="btn btn-primary btn-hero-primary">Pradėti Nemokamai</a>
+                <a href="#paslaugos" class="btn btn-secondary btn-hero-secondary">Sužinoti Daugiau</a>
             </div>
             <div class="hero-features">
                 <div class="hero-feature">
@@ -695,7 +717,7 @@
                         <li>❌ Dokumentų generavimas</li>
                         <li>❌ Prioritetinė pagalba</li>
                     </ul>
-                    <a href="/dashboard.html" class="btn btn-secondary" style="width: 100%;">Pradėti</a>
+                    <a href="/dashboard.html" class="btn btn-secondary btn-full-width">Pradėti</a>
                 </div>
                 <div class="pricing-card featured">
                     <div class="pricing-badge">Populiariausias</div>
@@ -709,7 +731,7 @@
                         <li>✅ Dokumentų generavimas</li>
                         <li>✅ Prioritetinė pagalba</li>
                     </ul>
-                    <a href="/dashboard.html" class="btn btn-primary" style="width: 100%;">Pradėti</a>
+                    <a href="/dashboard.html" class="btn btn-primary btn-full-width">Pradėti</a>
                 </div>
                 <div class="pricing-card">
                     <div class="pricing-name">Verslas</div>
@@ -722,7 +744,7 @@
                         <li>✅ Dedikuota pagalba</li>
                         <li>✅ Individuali integracija</li>
                     </ul>
-                    <a href="/dashboard.html" class="btn btn-secondary" style="width: 100%;">Susisiekti</a>
+                    <a href="/dashboard.html" class="btn btn-secondary btn-full-width">Susisiekti</a>
                 </div>
             </div>
         </div>
@@ -778,7 +800,7 @@
         <div class="footer-container">
             <div class="footer-section">
                 <h3>⚖️ Teisinis AI</h3>
-                <p style="color: rgba(255, 255, 255, 0.7); margin-top: 1rem;">
+                <p class="footer-description">
                     Jūsų asmeninis teisinis asistentas, pritaikytas Lietuvos įstatymams.
                 </p>
             </div>
