@@ -13,6 +13,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 from backend.rag.vector_store import LegalRAG
+from backend.agents.smart_fetcher import SmartLegalFetcher
 
 load_dotenv()
 
@@ -39,8 +40,11 @@ class LegalAdvisor:
             }
         )
         
-        # Initialize RAG system
+        # Initialize RAG system (fallback)
         self.rag = LegalRAG()
+        
+        # Initialize Smart Fetcher (primary)
+        self.fetcher = SmartLegalFetcher()
         
         print("[OK] Legal Advisor initialized")
     
@@ -71,13 +75,24 @@ class LegalAdvisor:
         print("="*70)
         print(f"\n❓ Question: {question}\n")
         
-        # Step 1: RAG Search - Find relevant articles
+        # Step 1: Try Smart Fetcher first, fallback to RAG
         print("STEP 1: Searching for relevant legal articles...\n")
-        relevant_articles = self.rag.search_relevant_articles(
-            query=question,
-            top_k=top_k,
-            category=category
-        )
+        
+        # Detect which law to use from question
+        law_id = self._detect_law_from_question(question, category)
+        
+        if law_id:
+            # Use Smart Fetcher
+            print(f"   Using Smart Fetcher for: {law_id}")
+            relevant_articles = self._fetch_with_smart_fetcher(question, law_id, top_k)
+        else:
+            # Fallback to RAG
+            print("   Using RAG fallback")
+            relevant_articles = self.rag.search_relevant_articles(
+                query=question,
+                top_k=top_k,
+                category=category
+            )
         
         if not relevant_articles:
             return {
@@ -181,9 +196,71 @@ ATSAKYMAS (su nuorodomis į straipsnius):"""
         # Return most common category
         return max(set(categories), key=categories.count)
     
+    def _detect_law_from_question(self, question: str, category: Optional[str]) -> Optional[str]:
+        """
+        Detect which law to use based on question and category
+        
+        Returns:
+            Law identifier or None
+        """
+        question_lower = question.lower()
+        
+        # Category-based detection
+        if category == 'darbo_teisė' or 'darb' in question_lower or 'atostog' in question_lower or 'atlygini' in question_lower:
+            return 'darbo_kodeksas'
+        
+        # Keyword-based detection
+        if 'darbo kodeks' in question_lower or 'darbo sutart' in question_lower:
+            return 'darbo_kodeksas'
+        
+        return None
+    
+    def _fetch_with_smart_fetcher(self, question: str, law_id: str, top_k: int) -> List[Dict]:
+        """
+        Fetch relevant articles using Smart Fetcher
+        
+        Returns:
+            List of article dicts in RAG format
+        """
+        try:
+            # Ensure law is cached
+            law = self.fetcher.get_law(law_id)
+            if not law:
+                return []
+            
+            # Search articles
+            articles = self.fetcher.search_articles(
+                query=question,
+                law_identifier=law_id,
+                top_k=top_k
+            )
+            
+            # Convert to RAG format
+            rag_format = []
+            for article in articles:
+                rag_format.append({
+                    'law_title': law['title'],
+                    'article_number': article['number'],
+                    'article_title': article['title'],
+                    'content': article['content'],
+                    'metadata': {'category': 'darbo_teisė', 'law_id': law_id},
+                    'distance': 0.3  # Placeholder
+                })
+            
+            return rag_format
+        except Exception as e:
+            print(f"⚠️ Smart Fetcher error: {e}")
+            return []
+    
     def get_stats(self) -> Dict:
         """Get statistics about the knowledge base"""
-        return self.rag.get_collection_stats()
+        rag_stats = self.rag.get_collection_stats()
+        fetcher_stats = self.fetcher.get_stats()
+        
+        return {
+            **rag_stats,
+            'cache_stats': fetcher_stats
+        }
 
 
 # Test code
