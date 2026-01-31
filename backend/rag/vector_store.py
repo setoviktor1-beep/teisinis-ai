@@ -4,10 +4,10 @@ Manages semantic search across Lithuanian legal documents
 """
 
 import chromadb
-from chromadb.config import Settings
 from sentence_transformers import SentenceTransformer
 from typing import List, Dict, Optional
 import os
+
 
 
 class LegalRAG:
@@ -25,11 +25,9 @@ class LegalRAG:
         # Ensure directory exists
         os.makedirs(persist_directory, exist_ok=True)
         
-        # Initialize ChromaDB client with persistence
-        self.client = chromadb.Client(Settings(
-            persist_directory=persist_directory,
-            anonymized_telemetry=False
-        ))
+        # Initialize ChromaDB with PersistentClient (new API)
+        # This ensures data is actually saved to disk
+        self.client = chromadb.PersistentClient(path=persist_directory)
         
         # Create or get collection for legal documents
         self.collection = self.client.get_or_create_collection(
