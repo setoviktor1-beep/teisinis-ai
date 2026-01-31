@@ -452,9 +452,9 @@ async def get_article(article_id: int):
 # Document Upload Endpoint
 @app.post("/api/v1/legal/upload-document")
 async def upload_document(
-    file: UploadFile = File(...),
-    analysis_type: str = Form(...),
-    current_user: User = Depends(auth.get_current_user)
+    file: Annotated[UploadFile, File()],
+    analysis_type: Annotated[str, Form()],
+    current_user: Annotated[User, Depends(auth.get_current_user)]
 ):
     """
     Upload and analyze legal document (PDF/DOCX)
