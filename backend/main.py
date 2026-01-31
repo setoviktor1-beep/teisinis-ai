@@ -25,9 +25,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend import auth  # noqa: E402
 from backend.agents.document_generator import DocumentGenerator  # noqa: E402
 from backend.agents.eseimas_agent import ESeimasAgent  # noqa: E402
+from backend.agents.legal_advisor import LegalAdvisor  # noqa: E402
+from backend.agents.document_analyzer import DocumentAnalyzer  # noqa: E402
 from backend.database import Base, engine, get_db  # noqa: E402
 from backend.models import Document, User  # noqa: E402
 from backend.scrapers.etar_scraper import ETARScraper  # noqa: E402
+from backend.middleware.rate_limiter import rate_limit_middleware  # noqa: E402
 
 # Create Database Tables
 Base.metadata.create_all(bind=engine)
@@ -67,6 +70,9 @@ app.add_middleware(
     https_only=False
 )
 
+# Rate Limiting Middleware (15 requests per minute)
+app.middleware("http")(rate_limit_middleware)
+
 # OAuth Configuration
 oauth = OAuth()
 oauth.register(
@@ -89,9 +95,13 @@ try:
     doc_generator = DocumentGenerator()
     eseimas = ESeimasAgent()
     scraper = ETARScraper()
+    legal_advisor = LegalAdvisor()
+    document_analyzer = DocumentAnalyzer()
     print("[OK] Agents initialized successfully")
 except Exception as e:
     print(f"[ERROR] Failed to initialize agents: {e}")
+    legal_advisor = None
+    document_analyzer = None
     # We don't crash here to allow health check to work even if agents fail
 
 # --- Pydantic Models ---
@@ -115,6 +125,16 @@ class ContractRequest(BaseModel):
 
 class ArticleRequest(BaseModel):
     article_number: int
+
+class LegalQuestionRequest(BaseModel):
+    question: str
+    category: Optional[str] = None
+    top_k: int = 5
+
+class ContractAnalysisRequest(BaseModel):
+    contract_text: str
+    contract_type: str = "general"  # employment, real_estate, family, tax, general
+    language: str = "lt"
 
 class UserCreate(BaseModel):
     email: str
@@ -197,7 +217,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
+
     access_token_expires = timedelta(minutes=auth.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
@@ -279,10 +299,10 @@ async def generate_complaint(request: ComplaintRequest, db: Session = Depends(ge
     try:
         user_data = request.dict()
         result = doc_generator.generate_labor_complaint(user_data)
-        
+
         if not result:
             raise HTTPException(status_code=500, detail="Failed to generate document")
-        
+
         # Save to Database
         db_doc = Document(
             title=f"Skundas: {user_data.get('employee_name', 'Darbuotojas')}",
@@ -294,7 +314,7 @@ async def generate_complaint(request: ComplaintRequest, db: Session = Depends(ge
         db.add(db_doc)
         db.commit()
         db.refresh(db_doc)
-            
+
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -307,10 +327,10 @@ async def generate_contract(request: ContractRequest, db: Session = Depends(get_
     try:
         user_data = request.dict()
         result = doc_generator.generate_employment_contract(user_data)
-        
+
         if not result:
             raise HTTPException(status_code=500, detail="Failed to generate document")
-        
+
         # Save to Database
         db_doc = Document(
             title=f"Darbo Sutartis: {user_data.get('employee_name')}",
@@ -322,7 +342,7 @@ async def generate_contract(request: ContractRequest, db: Session = Depends(get_
         db.add(db_doc)
         db.commit()
         db.refresh(db_doc)
-            
+
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
@@ -346,6 +366,58 @@ async def get_updates(keyword: str = "Darbo kodeksas", days: int = 7):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
+@app.post("/api/v1/legal/ask")
+async def ask_legal_question(request: LegalQuestionRequest, current_user: User = Depends(auth.get_current_user)):  # noqa: B008
+    """
+    Answer any legal question using RAG + AI
+    """
+    try:
+        if not legal_advisor:
+            raise HTTPException(status_code=503, detail="Legal Advisor not initialized")
+
+        result = legal_advisor.answer_legal_question(
+            question=request.question,
+            category=request.category,
+            top_k=request.top_k
+        )
+
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+@app.get("/api/v1/legal/stats")
+async def get_legal_stats():
+    """
+    Get statistics about the legal knowledge base
+    """
+    try:
+        if not legal_advisor:
+            raise HTTPException(status_code=503, detail="Legal Advisor not initialized")
+
+        stats = legal_advisor.get_stats()
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+@app.post("/api/v1/legal/analyze-contract")
+async def analyze_contract(request: ContractAnalysisRequest, current_user: User = Depends(auth.get_current_user)):  # noqa: B008
+    """
+    Analyze a legal contract and identify risks, missing clauses, and provide recommendations
+    """
+    try:
+        if not document_analyzer:
+            raise HTTPException(status_code=503, detail="Document Analyzer not initialized")
+
+        result = document_analyzer.analyze_contract(
+            contract_text=request.contract_text,
+            contract_type=request.contract_type,
+            language=request.language
+        )
+
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
 @app.get("/api/v1/articles/{article_id}")
 async def get_article(article_id: int):
     """
@@ -354,24 +426,24 @@ async def get_article(article_id: int):
     try:
         # Note: Scraper implementation needs to support fetch_article(int)
         # Current mock supports checking fallbacks
-        
+
         # Temporary logic until scraper fetch_article is fully robust with args
         # For MVP we mainly used fetch_darbo_kodeksas
-        
-        # We'll try to use the scraper's analyze method if we had the text, 
-        # but for now let's implement a simple lookup if the scraper has the method, 
+
+        # We'll try to use the scraper's analyze method if we had the text,
+        # but for now let's implement a simple lookup if the scraper has the method,
         # or return a stub if not yet implemented in scraper class.
-        
+
         if hasattr(scraper, 'fetch_article'):
              article = scraper.fetch_article(article_id)
         else:
              # Fallback implementation if scraper doesn't have fetch_article yet
              # This is just for the API endpoint to verify connectivity
              article = {"id": article_id, "content": "Article fetch logic pending in scraper update"}
-             
+
         if not article:
             raise HTTPException(status_code=404, detail="Article not found")
-            
+
         return article
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e

@@ -41,8 +41,8 @@ class ESeimasAgent:
              results.append({
                  'title': 'Lietuvos Respublikos darbo kodekso 52 straipsnio pakeitimo įstatymo projektas',
                  'reg_date': mock_date,
-                 'reg_num': 'XIVP-1234',
-                 'url': 'https://e-seimas.lrs.lt/portal/legalAct/lt/TAP/mock_id',
+                 'reg_num': 'XIVP-3962', # Real project number for context
+                 'url': 'https://e-seimas.lrs.lt/portal/legalAct/lt/search', # Direct link to search page as fallback
                  'type': 'Įstatymo projektas'
              })
              print(f"   ✅ Found simulated result: {results[0]['title']} ({mock_date})")

@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teisinis AI - Q&A Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        
+        .question-box {
+            margin-bottom: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .answer-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .answer-box.show {
+            display: block;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .answer-text {
+            line-height: 1.6;
+            color: #333;
+            white-space: pre-wrap;
+        }
+        
+        .sources {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .source-item {
+            margin-bottom: 15px;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .source-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .source-content {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .confidence {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .confidence.high {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .confidence.medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .confidence.low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .examples {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e7f3ff;
+            border-radius: 10px;
+        }
+        
+        .example-btn {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚖️ Teisinis AI</h1>
+        <p class="subtitle">Pilnavertis teisinis asistentas - Užduokite bet kokį klausimą apie Lietuvos įstatymus</p>
+        
+        <div class="examples">
+            <strong>Pavyzdžiai:</strong><br>
+            <button class="example-btn" onclick="setQuestion('Ar galiu nutraukti darbo sutartį be įspėjimo?')">Darbo sutartis</button>
+            <button class="example-btn" onclick="setQuestion('Kokios yra mano teisės kaip vartotojo?')">Vartotojų teisės</button>
+            <button class="example-btn" onclick="setQuestion('Kaip veikia atostogų sistema?')">Atostogos</button>
+        </div>
+        
+        <div class="question-box">
+            <textarea id="question" placeholder="Pvz: Ar galiu nutraukti darbo sutartį be įspėjimo?"></textarea>
+        </div>
+        
+        <button onclick="askQuestion()" id="askBtn">Klausti AI</button>
+        
+        <div id="answerBox" class="answer-box">
+            <div id="loading" class="loading hidden">
+                ⏳ Ieškoma relevantišk ų straipsnių ir generuojamas atsakymas...
+            </div>
+            
+            <div id="result" class="hidden">
+                <div id="confidence"></div>
+                <div class="answer-text" id="answer"></div>
+                <div class="sources" id="sources"></div>
+            </div>
+            
+            <div id="error" class="error hidden"></div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = '/api/v1';
+        
+        function setQuestion(text) {
+            document.getElementById('question').value = text;
+        }
+        
+        async function askQuestion() {
+            const question = document.getElementById('question').value.trim();
+            
+            if (!question) {
+                alert('Prašome įvesti klausimą');
+                return;
+            }
+            
+            const answerBox = document.getElementById('answerBox');
+            const loading = document.getElementById('loading');
+            const result = document.getElementById('result');
+            const error = document.getElementById('error');
+            const askBtn = document.getElementById('askBtn');
+            
+            // Show loading
+            answerBox.classList.add('show');
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            error.style.display = 'none';
+            askBtn.disabled = true;
+            
+            try {
+                const token = localStorage.getItem('token');
+                
+                if (!token) {
+                    throw new Error('Prašome prisijungti prie sistemos');
+                }
+                
+                const response = await fetch(`${API_BASE}/legal/ask`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        category: null,
+                        top_k: 5
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.detail || 'Klaida gaunant atsakymą');
+                }
+                
+                const data = await response.json();
+                
+                // Hide loading, show result
+                loading.style.display = 'none';
+                result.style.display = 'block';
+                
+                // Display confidence
+                const confidenceEl = document.getElementById('confidence');
+                confidenceEl.className = `confidence ${data.confidence}`;
+                confidenceEl.textContent = `Atsakymo tikslumas: ${data.confidence.toUpperCase()}`;
+                
+                // Display answer
+                document.getElementById('answer').textContent = data.answer;
+                
+                // Display sources
+                const sourcesEl = document.getElementById('sources');
+                if (data.sources && data.sources.length > 0) {
+                    sourcesEl.innerHTML = '<h3>📚 Šaltiniai:</h3>';
+                    data.sources.forEach((source, i) => {
+                        sourcesEl.innerHTML += `
+                            <div class="source-item">
+                                <div class="source-title">
+                                    ${i + 1}. ${source.law_title} - Straipsnis ${source.article_number}
+                                </div>
+                                <div class="source-content">
+                                    ${source.article_title}
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    sourcesEl.innerHTML = '';
+                }
+                
+            } catch (err) {
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = `❌ Klaida: ${err.message}`;
+            } finally {
+                askBtn.disabled = false;
+            }
+        }
+        
+        // Allow Enter to submit (Ctrl+Enter for new line)
+        document.getElementById('question').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.ctrlKey) {
+                e.preventDefault();
+                askQuestion();
+            }
+        });
+    </script>
+</body>
+</html>
