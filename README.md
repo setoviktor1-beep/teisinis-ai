@@ -1,16 +1,18 @@
-﻿# Teisinis AI - README
+﻿# Teisinis AI - AI-Powered Teisinis Asistentas 🤖⚖️
 
 ## 🎯 Apie Projektą
 
-**Teisinis AI** - pilnavertis AI-powered teisinis asistentas, galintis atsakyti į bet kokius klausimus apie Lietuvos įstatymus naudojant RAG (Retrieval-Augmented Generation) sistemą ir semantinę paiešką.
+**Teisinis AI** - pilnavertis AI-powered teisinis asistentas, skirtas Lietuvos teisei. Sistema naudoja **Gemini 1.5 Pro**, **RAG** sistemą, ir **real-time e-TAR.lt** integraciją teikti tikslius, deterministiškus teisinius patarimus.
 
 ## ✨ Pagrindinės Funkcijos
 
-- 🔍 **Semantinė Paieška** - randa relevantiškiausius straipsnius pagal prasmę, ne žodžius
-- 🤖 **AI Q&A** - atsakinėja į klausimus naudojant Gemini AI
-- 📚 **Automatinis Citavimas** - visada nurodo šaltinius
-- ⚖️ **Darbo Kodeksas** - pilnai indeksuotas (~200 straipsnių)
-- 🌐 **API & Web UI** - prieinama per API arba naršyklę
+- 🔍 **Legal Q&A** - Atsakymai į teisinius klausimus su AI
+- 📄 **Contract Analysis** - Sutarčių analizė su rizikų identifikavimu
+- 🔄 **Smart Caching** - Dinamiškas įstatymų fetching iš e-TAR (24h cache)
+- 🚦 **Rate Limiting** - API apsauga (15 req/min)
+- 🌡️ **Temperature 0.1** - Deterministiški, konsistenčiški atsakymai
+- 🔐 **Google OAuth** - Saugus prisijungimas
+- 📚 **Darbo Kodeksas** - Pilnai integruotas (~200 straipsnių)
 
 ## 🚀 Greitas Startas
 
@@ -18,7 +20,7 @@
 
 ```bash
 # Clone repository
-git clone https://github.com/YOUR_USERNAME/teisinis-ai.git
+git clone https://github.com/setoviktor1-beep/teisinis-ai-new.git
 cd teisinis-ai
 
 # Install dependencies
@@ -35,127 +37,183 @@ GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GOOGLE_REDIRECT_URI=http://localhost:8000/auth/callback
 SECRET_KEY=your_secret_key_here
+DATABASE_URL=postgresql://user:password@localhost/teisinis_ai
 ```
 
-### 3. Indeksavimas
-
-```bash
-# Indeksuoti Darbo kodeksą (vienkartinė operacija)
-python scripts/index_laws.py
-```
-
-### 4. Paleidimas
+### 3. Paleidimas
 
 ```bash
 # Paleisti serverį
 uvicorn backend.main:app --reload
 
 # Atidaryti naršyklėje
-# http://localhost:8000/qa_test.html
+# http://localhost:8000
 ```
 
 ## 📖 Naudojimas
 
 ### Web UI
 
-1. Eikite į `http://localhost:8000/qa_test.html`
-2. Prisijunkite su Google
-3. Užduokite klausimą, pvz: "Kaip veikia atostogos?"
-4. Gaukite atsakymą su nuorodomis į straipsnius
+**Legal Q&A**: `http://localhost:8000/qa_test.html`
+```
+1. Prisijunkite su Google
+2. Užduokite klausimą: "Kaip veikia atostogos?"
+3. Gaukite atsakymą su šaltiniais
+```
+
+**Contract Analyzer**: `http://localhost:8000/contract_analyzer.html`
+```
+1. Įklijuokite sutarties tekstą
+2. Pasirinkite tipą (employment, real_estate, etc.)
+3. Gaukite analizę su rizikomis ir rekomendacijomis
+```
 
 ### API
 
+**Legal Q&A**:
 ```bash
 curl -X POST http://localhost:8000/api/v1/legal/ask \
-  -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "question": "Ar galiu nutraukti darbo sutartį?",
-    "top_k": 5
+    "category": "darbo_teisė"
   }'
 ```
 
-### Python
-
-```python
-from backend.agents.legal_advisor import LegalAdvisor
-
-advisor = LegalAdvisor()
-result = advisor.answer_legal_question(
-    question="Kaip veikia atostogų sistema?",
-    category="darbo_teisė",
-    top_k=5
-)
-
-print(result['answer'])
-print(f"Confidence: {result['confidence']}")
-print(f"Sources: {len(result['sources'])}")
+**Contract Analysis**:
+```bash
+curl -X POST http://localhost:8000/api/v1/legal/analyze-contract \
+  -H "Content-Type: application/json" \
+  -d '{
+    "contract_text": "DARBO SUTARTIS...",
+    "contract_type": "employment"
+  }'
 ```
 
 ## 🏗️ Architektūra
 
+### System Flow
+
 ```
-Vartotojas → FastAPI → Legal Advisor → RAG System → ChromaDB
-                                    ↓
-                              Gemini 1.5 Pro
+Vartotojas → FastAPI → Legal Advisor
+                           ↓
+                    Smart Fetcher
+                    ↓         ↓
+                Cache ←→ e-TAR.lt
+                    ↓
+              Gemini 1.5 Pro (temp=0.1)
+                    ↓
+                Atsakymas
 ```
+
+### Tech Stack
+
+**Backend**:
+- FastAPI (Python 3.11+)
+- Google Gemini 1.5 Pro
+- ChromaDB (RAG)
+- SQLite (Cache)
+- PostgreSQL (Users)
+- BeautifulSoup4 (Scraping)
+
+**Frontend**:
+- HTML5 + CSS3
+- Vanilla JavaScript
+- Google OAuth 2.0
+
+**AI/ML**:
+- Sentence Transformers
+- RAG (Retrieval-Augmented Generation)
+- Temperature 0.1 (deterministic)
 
 ## 📁 Projekto Struktūra
 
 ```
 teisinis-ai/
 ├── backend/
-│   ├── agents/          # AI agentai
-│   ├── rag/            # RAG sistema
-│   ├── scrapers/       # Web scrapers
-│   └── main.py         # FastAPI app
-├── frontend/           # Web UI
-├── scripts/            # Utility scripts
-├── tests/              # Tests
-└── data/               # Duomenų bazė
+│   ├── agents/              # AI agentai
+│   │   ├── legal_advisor.py      # Q&A agentas
+│   │   ├── document_analyzer.py  # Sutarčių analizė
+│   │   ├── smart_fetcher.py      # e-TAR + cache
+│   │   └── document_generator.py
+│   ├── cache/               # Cache sistema
+│   │   ├── cache_manager.py
+│   │   └── schema.sql
+│   ├── middleware/          # Middleware
+│   │   └── rate_limiter.py
+│   ├── rag/                 # RAG sistema
+│   │   └── vector_store.py
+│   ├── scrapers/            # Web scrapers
+│   │   └── etar_scraper.py
+│   └── main.py              # FastAPI app
+├── frontend/                # Web UI
+│   ├── index.html
+│   ├── qa_test.html
+│   ├── contract_analyzer.html
+│   └── login.html
+├── data/                    # Duomenų bazės
+│   ├── legal_cache.db       # SQLite cache
+│   └── chroma_db/           # ChromaDB
+└── scripts/                 # Utility scripts
 ```
 
-## 🔧 Technologijos
+## 🔧 Phase 3.5: Smart Caching Sistema
 
-- **Backend**: FastAPI, Python 3.10+
-- **AI**: Google Gemini 1.5 Pro
-- **RAG**: ChromaDB, Sentence Transformers
-- **Scraping**: BeautifulSoup, Requests
-- **Auth**: Google OAuth 2.0
+### Problema
+Įstatymai dažnai keičiasi. Statinis RAG greitai paseno.
+
+### Sprendimas
+**Hybrid Approach**: Real-time e-TAR + Smart Caching
+
+**Funkcionalumas**:
+- ✅ Automatinis cache check
+- ✅ Real-time e-TAR fetching
+- ✅ 24h TTL
+- ✅ Batch article caching
+- ✅ Law detection from questions
+- ✅ RAG fallback
+
+**Performance**:
+- Cache HIT: <100ms
+- Cache MISS: 2-5s (e-TAR fetch)
+- Rate limit: 15 req/min
 
 ## 📊 Statistika
 
 - **Indeksuota straipsnių**: ~200 (Darbo kodeksas)
-- **Embedding modelis**: paraphrase-multilingual-mpnet-base-v2
-- **Vektorių dimensija**: 768
-- **Vidutinis atsakymo laikas**: 3-5s
+- **Cache TTL**: 24 hours
+- **API endpoints**: 15+
+- **Agentai**: 4
+- **Kodo eilučių**: ~5000+
 
 ## 🛣️ Roadmap
 
-### Fazė 1: Pagrindas ✅
+### ✅ Baigta (Phase 1-3.5)
 - [x] RAG sistema
-- [x] Legal Advisor agentas
-- [x] API endpoints
+- [x] Legal Advisor
+- [x] Document Analyzer
+- [x] Smart Caching
+- [x] Rate Limiting
+- [x] Temperature 0.1
+- [x] Google OAuth
 - [x] Darbo kodeksas
 
-### Fazė 2: Plėtra
+### 🚧 Planuojama
+- [ ] Background job (versijų tikrinimas)
+- [ ] Frontend kategorijų sistema
 - [ ] Civilinis kodeksas
-- [ ] Baudžiamasis kodeksas
-- [ ] Administracinių nusižengimų kodeksas
-
-### Fazė 3: Funkcionalumas
-- [ ] Sutarčių analizė
-- [ ] Teismų praktika
-- [ ] Multi-language support
+- [ ] Mokesčių įstatymai
+- [ ] Unit testai
+- [ ] Docker deployment
 
 ## 🐛 Žinomos Problemos
 
-- Civilinis kodeksas turi sudėtingą struktūrą (6 knygos) - reikia custom parser
-- GitHub push blocker (GH013) - reikia manual fix
+- GitHub push protection (GH013) - reikia manual workaround
+- Civilinis kodeksas - sudėtinga struktūra (6 knygos)
 
 ## 🤝 Prisidėjimas
 
-Contributions are welcome! Please:
+Contributions are welcome!
 
 1. Fork the repository
 2. Create a feature branch
@@ -164,12 +222,7 @@ Contributions are welcome! Please:
 
 ## 📄 Licencija
 
-MIT License - žiūrėkite LICENSE failą
-
-## 📞 Kontaktai
-
-- **Issues**: GitHub Issues
-- **Email**: your.email@example.com
+MIT License
 
 ## 🙏 Padėkos
 
@@ -181,3 +234,5 @@ MIT License - žiūrėkite LICENSE failą
 ---
 
 **Sukurta su ❤️ Lietuvoje**
+
+*Last updated: 2026-01-31 - Phase 3.5 Complete*
