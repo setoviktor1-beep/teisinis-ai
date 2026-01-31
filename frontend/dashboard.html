@@ -609,13 +609,228 @@
             const content = `
                 <div class="content-header">
                     <h1 class="content-title">Dokumentų Analizė</h1>
-                    <p class="content-description">Įkelkite PDF arba DOCX failą analizei</p>
+                    <p class="content-description">Įkelkite PDF arba DOCX failą automatinei analizei</p>
                 </div>
                 <div class="content-body">
-                    <p style="color: var(--text-secondary);">🚧 Funkcija kuriama...</p>
+                    <div class="upload-container">
+                        <div class="upload-zone" id="uploadZone" ondrop="handleDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                            <div class="upload-icon">📄</div>
+                            <h3>Vilkite failą čia arba</h3>
+                            <input type="file" id="fileInput" accept=".pdf,.docx" style="display: none" onchange="handleFileSelect(event)">
+                            <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                Pasirinkti Failą
+                            </button>
+                            <p style="color: var(--text-secondary); margin-top: 1rem; font-size: 0.9rem;">
+                                Palaikomi formatai: PDF, DOCX (maks. 10MB)
+                            </p>
+                        </div>
+
+                        <div class="upload-options" style="margin-top: 2rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: var(--text-secondary);">
+                                Dokumento tipas:
+                            </label>
+                            <select id="analysisType" style="width: 100%; padding: 0.75rem; border-radius: 0.5rem; background: var(--bg-dark); color: var(--text-primary); border: 1px solid var(--border);">
+                                <option value="employment">Darbo sutartis</option>
+                                <option value="real_estate">Nekilnojamojo turto sutartis</option>
+                                <option value="service">Paslaugų sutartis</option>
+                                <option value="general">Bendras dokumentas</option>
+                            </select>
+                        </div>
+
+                        <div id="uploadProgress" style="display: none; margin-top: 2rem;">
+                            <div style="background: var(--bg-hover); padding: 1rem; border-radius: 0.5rem;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                    <span id="uploadFileName"></span>
+                                    <span id="uploadStatus">Įkeliama...</span>
+                                </div>
+                                <div style="background: var(--bg-dark); height: 8px; border-radius: 4px; overflow: hidden;">
+                                    <div id="progressBar" style="background: var(--primary); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="uploadResult" style="display: none; margin-top: 2rem;">
+                            <!-- Results will be shown here -->
+                        </div>
+                    </div>
+
+                    <style>
+                        .upload-container {
+                            max-width: 600px;
+                            margin: 0 auto;
+                        }
+
+                        .upload-zone {
+                            border: 2px dashed var(--border);
+                            border-radius: 1rem;
+                            padding: 3rem 2rem;
+                            text-align: center;
+                            transition: all 0.3s;
+                            cursor: pointer;
+                        }
+
+                        .upload-zone:hover {
+                            border-color: var(--primary);
+                            background: var(--bg-hover);
+                        }
+
+                        .upload-zone.drag-over {
+                            border-color: var(--primary);
+                            background: var(--bg-hover);
+                            transform: scale(1.02);
+                        }
+
+                        .upload-icon {
+                            font-size: 4rem;
+                            margin-bottom: 1rem;
+                        }
+                    </style>
                 </div>
             `;
             document.getElementById('contentArea').innerHTML = content;
+        }
+
+        // File upload handlers
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('uploadZone').classList.add('drag-over');
+        }
+
+        function handleDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('uploadZone').classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.getElementById('uploadZone').classList.remove('drag-over');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        }
+
+        function handleFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                uploadFile(files[0]);
+            }
+        }
+
+        async function uploadFile(file) {
+            // Validate file
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            if (file.size > maxSize) {
+                alert('Failas per didelis. Maksimalus dydis: 10MB');
+                return;
+            }
+
+            const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+            if (!validTypes.includes(file.type) && !file.name.endsWith('.pdf') && !file.name.endsWith('.docx')) {
+                alert('Netinkamas failo formatas. Palaikomi: PDF, DOCX');
+                return;
+            }
+
+            // Show progress
+            document.getElementById('uploadProgress').style.display = 'block';
+            document.getElementById('uploadResult').style.display = 'none';
+            document.getElementById('uploadFileName').textContent = file.name;
+            document.getElementById('progressBar').style.width = '30%';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('analysis_type', document.getElementById('analysisType').value);
+
+                document.getElementById('progressBar').style.width = '60%';
+
+                const response = await fetch('/api/v1/legal/upload-document', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    body: formData
+                });
+
+                document.getElementById('progressBar').style.width = '90%';
+
+                if (!response.ok) {
+                    throw new Error('Upload failed');
+                }
+
+                const result = await response.json();
+
+                document.getElementById('progressBar').style.width = '100%';
+                document.getElementById('uploadStatus').textContent = 'Baigta!';
+
+                // Show results
+                setTimeout(() => {
+                    showUploadResult(result);
+                }, 500);
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                document.getElementById('uploadStatus').textContent = 'Klaida!';
+                document.getElementById('uploadStatus').style.color = 'var(--danger)';
+                alert('Įvyko klaida įkeliant failą. Bandykite dar kartą.');
+            }
+        }
+
+        function showUploadResult(result) {
+            document.getElementById('uploadProgress').style.display = 'none';
+
+            const analysis = result.analysis;
+            const resultHTML = `
+                <div style="background: var(--bg-hover); padding: 2rem; border-radius: 1rem;">
+                    <h3 style="margin-bottom: 1rem;">Analizės Rezultatai</h3>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">Failas:</h4>
+                        <p>${result.filename} (${(result.file_size / 1024).toFixed(2)} KB)</p>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <h4 style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem;">Santrauka:</h4>
+                        <p>${analysis.summary || 'N/A'}</p>
+                    </div>
+
+                    ${analysis.risks && analysis.risks.length > 0 ? `
+                        <div style="margin-bottom: 1.5rem;">
+                            <h4 style="color: var(--warning); font-size: 0.9rem; margin-bottom: 0.5rem;">⚠️ Rizikos:</h4>
+                            ${analysis.risks.map(risk => `
+                                <div style="background: var(--bg-dark); padding: 1rem; border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                                    <strong>${risk.risk}</strong>
+                                    <p style="color: var(--text-secondary); margin-top: 0.5rem;">${risk.explanation}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+                    ${analysis.recommendations && analysis.recommendations.length > 0 ? `
+                        <div style="margin-bottom: 1.5rem;">
+                            <h4 style="color: var(--success); font-size: 0.9rem; margin-bottom: 0.5rem;">✅ Rekomendacijos:</h4>
+                            <ul style="list-style: none; padding: 0;">
+                                ${analysis.recommendations.map(rec => `
+                                    <li style="background: var(--bg-dark); padding: 0.75rem; border-radius: 0.5rem; margin-bottom: 0.5rem;">
+                                        ${rec}
+                                    </li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+
+                    <button class="btn btn-primary" onclick="loadUploadView()">
+                        Įkelti Kitą Dokumentą
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('uploadResult').innerHTML = resultHTML;
+            document.getElementById('uploadResult').style.display = 'block';
         }
 
         function loadContractView() {
