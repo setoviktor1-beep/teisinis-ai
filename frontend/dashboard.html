@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teisinis AI - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-hover: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-menu {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--secondary);
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: grid;
+            grid-template-columns: 250px 1fr 350px;
+            height: calc(100vh - 73px);
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            padding: 1.5rem;
+            overflow-y: auto;
+        }
+
+        .nav-section {
+            margin-bottom: 2rem;
+        }
+
+        .nav-title {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .nav-item.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .nav-icon {
+            font-size: 1.25rem;
+        }
+
+        .nav-text {
+            font-size: 0.9rem;
+        }
+
+        /* Main Content */
+        .content {
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .content-header {
+            margin-bottom: 2rem;
+        }
+
+        .content-title {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .content-description {
+            color: var(--text-secondary);
+        }
+
+        .content-body {
+            background: var(--bg-card);
+            border-radius: 1rem;
+            padding: 2rem;
+            min-height: 400px;
+        }
+
+        /* Chat Sidebar */
+        .chat-sidebar {
+            background: var(--bg-card);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .chat-sidebar.minimized {
+            width: 60px;
+        }
+
+        .chat-header {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .chat-toggle {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 1.5rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .message {
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            max-width: 85%;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            background: var(--primary);
+            align-self: flex-end;
+            margin-left: auto;
+        }
+
+        .message.ai {
+            background: var(--bg-hover);
+            align-self: flex-start;
+        }
+
+        .message-time {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .chat-input-container {
+            padding: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .chat-input-wrapper {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .chat-send {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .chat-send:hover {
+            background: var(--primary-dark);
+        }
+
+        .chat-send:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Feature Cards */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .feature-card {
+            background: var(--bg-hover);
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .feature-card:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Loading */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-container {
+                grid-template-columns: 200px 1fr;
+            }
+
+            .chat-sidebar {
+                position: fixed;
+                right: 0;
+                top: 73px;
+                height: calc(100vh - 73px);
+                transform: translateX(100%);
+                transition: transform 0.3s;
+                z-index: 50;
+            }
+
+            .chat-sidebar.open {
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 73px;
+                height: calc(100vh - 73px);
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                z-index: 50;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">
+            ⚖️ Teisinis AI
+        </div>
+        <div class="user-menu">
+            <div class="user-info">
+                <div class="user-avatar">V</div>
+                <span id="userName">Vartotojas</span>
+            </div>
+            <button class="btn btn-secondary" onclick="logout()">Atsijungti</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Sidebar Navigation -->
+        <div class="sidebar" id="sidebar">
+            <div class="nav-section">
+                <div class="nav-title">Pagrindinės Funkcijos</div>
+                <div class="nav-item active" onclick="switchView('home')">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">Pradžia</span>
+                </div>
+                <div class="nav-item" onclick="switchView('qa')">
+                    <span class="nav-icon">💬</span>
+                    <span class="nav-text">Teisinis Q&A</span>
+                </div>
+                <div class="nav-item" onclick="switchView('upload')">
+                    <span class="nav-icon">📄</span>
+                    <span class="nav-text">Dokumentų Analizė</span>
+                </div>
+                <div class="nav-item" onclick="switchView('contract')">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-text">Sutarčių Analizė</span>
+                </div>
+                <div class="nav-item" onclick="switchView('complaint')">
+                    <span class="nav-icon">⚖️</span>
+                    <span class="nav-text">Skundų Generavimas</span>
+                </div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-title">Kita</div>
+                <div class="nav-item" onclick="switchView('history')">
+                    <span class="nav-icon">📜</span>
+                    <span class="nav-text">Istorija</span>
+                </div>
+                <div class="nav-item" onclick="switchView('settings')">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">Nustatymai</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <div id="contentArea">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+        </div>
+
+        <!-- Chat Sidebar -->
+        <div class="chat-sidebar" id="chatSidebar">
+            <div class="chat-header">
+                <span class="chat-title">AI Asistentas</span>
+                <button class="chat-toggle" onclick="toggleChat()">−</button>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message ai">
+                    <div>Sveiki! Esu jūsų teisinis AI asistentas. Kaip galiu padėti?</div>
+                    <div class="message-time">Dabar</div>
+                </div>
+            </div>
+            <div class="chat-input-container">
+                <div class="chat-input-wrapper">
+                    <input 
+                        type="text" 
+                        class="chat-input" 
+                        id="chatInput" 
+                        placeholder="Užduokite klausimą..."
+                        onkeypress="handleChatKeyPress(event)"
+                    >
+                    <button class="chat-send" onclick="sendChatMessage()" id="chatSendBtn">
+                        Siųsti
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Current view
+        let currentView = 'home';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHomeView();
+            checkAuth();
+        });
+
+        // Check authentication
+        function checkAuth() {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            // Get user info
+            const userEmail = localStorage.getItem('user_email');
+            if (userEmail) {
+                document.getElementById('userName').textContent = userEmail.split('@')[0];
+                const avatar = document.querySelector('.user-avatar');
+                avatar.textContent = userEmail[0].toUpperCase();
+            }
+        }
+
+        // Logout
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_email');
+            window.location.href = '/login.html';
+        }
+
+        // Switch view
+        function switchView(view) {
+            currentView = view;
+
+            // Update active nav item
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+
+            // Load view content
+            switch(view) {
+                case 'home':
+                    loadHomeView();
+                    break;
+                case 'qa':
+                    loadQAView();
+                    break;
+                case 'upload':
+                    loadUploadView();
+                    break;
+                case 'contract':
+                    loadContractView();
+                    break;
+                case 'complaint':
+                    loadComplaintView();
+                    break;
+                case 'history':
+                    loadHistoryView();
+                    break;
+                case 'settings':
+                    loadSettingsView();
+                    break;
+            }
+        }
+
+        // Load Home View
+        function loadHomeView() {
+            const content = `
+                <div class="content-header">
+                    <h1 class="content-title">Sveiki atvykę į Teisinis AI</h1>
+                    <p class="content-description">Pasirinkite funkciją iš meniu arba pradėkite pokalbį su AI asistentu</p>
+                </div>
+                <div class="content-body">
+                    <div class="feature-grid">
+                        <div class="feature-card" onclick="switchView('qa')">
+                            <div class="feature-icon">💬</div>
+                            <h3 class="feature-title">Teisinis Q&A</h3>
+                            <p class="feature-description">Klauskite bet ką apie Lietuvos įstatymus ir gaukite tikslius atsakymus</p>
+                        </div>
+                        <div class="feature-card" onclick="switchView('upload')">
+                            <div class="feature-icon">📄</div>
+                            <h3 class="feature-title">Dokumentų Analizė</h3>
+                            <p class="feature-description">Įkelkite PDF ar DOCX dokumentus automatinei analizei</p>
+                        </div>
+                        <div class="feature-card" onclick="switchView('contract')">
+                            <div class="feature-icon">📋</div>
+                            <h3 class="feature-title">Sutarčių Analizė</h3>
+                            <p class="feature-description">Analizuokite sutartis, identifikuokite rizikas ir gaukite rekomendacijas</p>
+                        </div>
+                        <div class="feature-card" onclick="switchView('complaint')">
+                            <div class="feature-icon">⚖️</div>
+                            <h3 class="feature-title">Skundų Generavimas</h3>
+                            <p class="feature-description">Generuokite teisinius skundus su AI pagalba</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('contentArea').innerHTML = content;
+        }
+
+        // Load other views (placeholders for now)
+        function loadQAView() {
+            window.location.href = '/qa_test.html';
+        }
+
+        function loadUploadView() {
+            const content = `
+                <div class="content-header">
+                    <h1 class="content-title">Dokumentų Analizė</h1>
+                    <p class="content-description">Įkelkite PDF arba DOCX failą analizei</p>
+                </div>
+                <div class="content-body">
+                    <p style="color: var(--text-secondary);">🚧 Funkcija kuriama...</p>
+                </div>
+            `;
+            document.getElementById('contentArea').innerHTML = content;
+        }
+
+        function loadContractView() {
+            window.location.href = '/contract_analyzer.html';
+        }
+
+        function loadComplaintView() {
+            window.location.href = '/index.html';
+        }
+
+        function loadHistoryView() {
+            const content = `
+                <div class="content-header">
+                    <h1 class="content-title">Istorija</h1>
+                    <p class="content-description">Jūsų ankstesnės užklausos ir analizės</p>
+                </div>
+                <div class="content-body">
+                    <p style="color: var(--text-secondary);">🚧 Funkcija kuriama...</p>
+                </div>
+            `;
+            document.getElementById('contentArea').innerHTML = content;
+        }
+
+        function loadSettingsView() {
+            const content = `
+                <div class="content-header">
+                    <h1 class="content-title">Nustatymai</h1>
+                    <p class="content-description">Konfigūruokite savo paskyros nustatymus</p>
+                </div>
+                <div class="content-body">
+                    <p style="color: var(--text-secondary);">🚧 Funkcija kuriama...</p>
+                </div>
+            `;
+            document.getElementById('contentArea').innerHTML = content;
+        }
+
+        // Chat functions
+        function toggleChat() {
+            const sidebar = document.getElementById('chatSidebar');
+            sidebar.classList.toggle('minimized');
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendChatMessage();
+            }
+        }
+
+        async function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // Add user message
+            addMessage(message, 'user');
+            input.value = '';
+
+            // Disable send button
+            const sendBtn = document.getElementById('chatSendBtn');
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<div class="loading"></div>';
+
+            try {
+                // Call API
+                const response = await fetch('/api/v1/legal/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
+                    },
+                    body: JSON.stringify({
+                        question: message
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Add AI response
+                addMessage(data.answer, 'ai');
+
+            } catch (error) {
+                console.error('Chat error:', error);
+                addMessage('Atsiprašome, įvyko klaida. Bandykite dar kartą.', 'ai');
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Siųsti';
+            }
+        }
+
+        function addMessage(text, type) {
+            const messagesContainer = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const now = new Date();
+            const time = now.toLocaleTimeString('lt-LT', { hour: '2-digit', minute: '2-digit' });
+            
+            messageDiv.innerHTML = `
+                <div>${text}</div>
+                <div class="message-time">${time}</div>
+            `;
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+    </script>
+</body>
+</html>

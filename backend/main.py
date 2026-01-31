@@ -5,7 +5,7 @@ from datetime import timedelta
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
@@ -447,6 +447,83 @@ async def get_article(article_id: int):
         return article
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+# Document Upload Endpoint
+@app.post("/api/v1/legal/upload-document")
+async def upload_document(
+    file: UploadFile = File(...),
+    analysis_type: str = Form("general"),
+    current_user: User = Depends(auth.get_current_user)
+):
+    """
+    Upload and analyze legal document (PDF/DOCX)
+    """
+    try:
+        # Read file content
+        content = await file.read()
+
+        # Extract text based on file type
+        if file.filename.endswith('.pdf'):
+            import PyPDF2
+            import io
+
+            pdf_file = io.BytesIO(content)
+            pdf_reader = PyPDF2.PdfReader(pdf_file)
+
+            text = ""
+            for page in pdf_reader.pages:
+                text += page.extract_text()
+
+        elif file.filename.endswith('.docx'):
+            import docx
+            import io
+
+            doc_file = io.BytesIO(content)
+            doc = docx.Document(doc_file)
+
+            text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="Unsupported file format. Please upload PDF or DOCX."
+            )
+
+        if not text.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="Could not extract text from document"
+            )
+
+        # Analyze with Document Analyzer
+        if not document_analyzer:
+            raise HTTPException(
+                status_code=503,
+                detail="Document analyzer not initialized"
+            )
+
+        result = document_analyzer.analyze_contract(
+            contract_text=text,
+            contract_type=analysis_type
+        )
+
+        return {
+            "filename": file.filename,
+            "file_size": len(content),
+            "extracted_text_length": len(text),
+            "analysis": result
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Document upload error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing document: {str(e)}"
+        ) from e
+
 
 # Mount Frontend - Must be after API routes
 if os.path.exists("frontend"):
