@@ -42,7 +42,7 @@ Tai sukurs `users` ir `documents` lenteles SQLite DB.
 **LABAI SVARBU:** Google Cloud Console reikia pridėti redirect URI!
 
 1. Eik į: https://console.cloud.google.com/apis/credentials
-2. Rask savo OAuth 2.0 Client ID (pradžia: 599280134086...)
+2. Rask savo OAuth 2.0 Client ID
 3. Spausk "EDIT" (redaguoti)
 4. Dalyje "Authorized redirect URIs" pridėk:
    ```
@@ -91,6 +91,10 @@ GOOGLE_CLIENT_ID=your_google_client_id_here
 GOOGLE_CLIENT_SECRET=your_google_client_secret_here
 ```
 
+**Pastaba:** Tikrus credentials gausi iš Google Cloud Console:
+https://console.cloud.google.com/apis/credentials
+
+
 ### ❌ Problema 2: "redirect_uri_mismatch"
 **Sprendimas:** Google Cloud Console turi būti pridėtas tikslus redirect URI. Žiūrėk ŽINGSNIS 3.
 
@@ -117,10 +121,11 @@ Tada atnaujink Google OAuth redirect URI į `http://localhost:8001/api/v1/auth/g
 ### 1. Tikrink serverio konsoles išvestį
 Serveris turėtų parodyti:
 ```
-✅ Loaded Google Client ID: 599280134... (Length: 72)
+✅ Loaded Google Client ID: 59928... (Length: 72)
 ✅ Loaded Google Client Secret: GOCSP... (Length: 35)
 ✅ Agents initialized successfully
 ```
+
 
 ### 2. Tikrink browser console (F12)
 Jei registracija/login neveikia, pažiūrėk į klaidas Console tab.
